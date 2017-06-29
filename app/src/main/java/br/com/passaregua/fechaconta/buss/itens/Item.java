@@ -1,20 +1,31 @@
 package br.com.passaregua.fechaconta.buss.itens;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
+
+import br.com.passaregua.fechaconta.util.UtilString;
 
 /**
  * Created by Anderson on 28/06/2017.
  */
 public class Item {
-    private String nome;
+    private int numItem;
+    private String descricao;
     private BigDecimal qtdTotal;
     private BigDecimal vlrUnitario;
     private List<ItemDividido> lsItensDivididos;
 
-    public Item(String nome, BigDecimal qtdTotal, BigDecimal vlrUnitario) {
-        this.nome = nome;
+    /**
+     * @param numItem
+     * @param descricao
+     * @param qtdTotal
+     * @param vlrUnitario
+     */
+    public Item(int numItem, String descricao, BigDecimal qtdTotal, BigDecimal vlrUnitario) {
+        this.numItem = numItem;
+        this.descricao = descricao;
         this.qtdTotal = qtdTotal;
         this.vlrUnitario = vlrUnitario;
         lsItensDivididos = new ArrayList<ItemDividido>();
@@ -34,7 +45,7 @@ public class Item {
 
     // Calculo de totais
     public BigDecimal calculaTotal() {
-        return qtdTotal.multiply(vlrUnitario);
+        return qtdTotal.multiply(vlrUnitario).setScale(2, RoundingMode.HALF_UP);
     }
 
     public BigDecimal calculaTotalDividido() {
@@ -44,11 +55,11 @@ public class Item {
             bdAux = bdAux.add( itDiv.calculaTotal() );
         }
 
-        return bdAux;
+        return bdAux.setScale(2, RoundingMode.HALF_UP);
     }
 
     public BigDecimal calculaTotalNaoDividido() {
-        return calculaTotal().subtract( calculaTotalDividido() );
+        return calculaTotal().subtract( calculaTotalDividido() ).setScale(2, RoundingMode.HALF_UP);
     }
 
     public int getStatus() {
@@ -62,12 +73,20 @@ public class Item {
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     //                                  GETTERS AND SETTERS
-    public String getNome() {
-        return nome;
+    public int getNumItem() {
+        return numItem;
     }
 
-    public void setNome(String nome) {
-        this.nome = nome;
+    public void setNumItem(int numItem) {
+        this.numItem = numItem;
+    }
+
+    public String getDescricao() {
+        return descricao;
+    }
+
+    public void setDescricao(String descricao) {
+        this.descricao = descricao;
     }
 
     public BigDecimal getQtdTotal() {
@@ -90,4 +109,22 @@ public class Item {
         return lsItensDivididos;
     }
     ///////////////////////////////////////////////////////////////////////////////////////////////
+
+
+    @Override
+    public String toString() {
+        String out = "Item ['" +
+                numItem + "', '" +
+                descricao + "', '" +
+                UtilString.formataCasasDecimais(qtdTotal, 3) + "', '" +
+                UtilString.formataCasasDecimais(vlrUnitario) + "', '" +
+                UtilString.formataCasasDecimais(calculaTotal()) + "']";
+
+        return out;
+    }
+
+    @Override
+    public int hashCode() {
+        return numItem + descricao.hashCode();
+    }
 }

@@ -4,7 +4,9 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
+import br.com.passaregua.fechaconta.buss.imposto.IImposto;
 import br.com.passaregua.fechaconta.buss.itens.ItemDividido;
+import br.com.passaregua.fechaconta.util.UtilString;
 
 /**
  * Created by Anderson on 28/06/2017.
@@ -12,16 +14,12 @@ import br.com.passaregua.fechaconta.buss.itens.ItemDividido;
 public class Conta {
     private Pagante pagante;
     private List<ItemDividido> lsItens;
-    private List<Imposto> lsImposto;
-
-    //TODO: RATEIO DO TOTAL !!
-    // -  Se sobrar, retira dos maiores
-    // -  Se faltar, poe nos maiores
+    private List<IImposto> lsImposto;
 
     public Conta(Pagante pagante) {
         this.pagante = pagante;
         lsItens = new ArrayList<ItemDividido>();
-        lsImposto = new ArrayList<Imposto>();
+        lsImposto = new ArrayList<IImposto>();
     }
     ///////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -33,28 +31,66 @@ public class Conta {
     public boolean removeItemDividido(ItemDividido itemDividido) {
         return lsItens.remove(itemDividido);
     }
+
+    public boolean hasItemDividido(ItemDividido itemDividido) {
+        return lsItens.contains(itemDividido);
+    }
+
     // Inclusao e Remoção de Imposto
-    public boolean addImposto(Imposto imposto) {
+    public boolean addImposto(IImposto imposto) {
         return lsImposto.add(imposto);
     }
 
-    public boolean removeImposto(Imposto imposto) {
+    public boolean removeImposto(IImposto imposto) {
         return lsImposto.remove(imposto);
     }
 
-    // Calculo de total
+    public boolean hasImposto(IImposto imposto) {
+        return lsImposto.contains(imposto);
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // Calculo de Total
     public BigDecimal calculaTotal() {
+        BigDecimal bdAux = new BigDecimal(0);
+
+        bdAux = bdAux.add(calculaTotalItens());
+        bdAux = bdAux.add(calculaTotalImpostos());
+
+        return bdAux;
+    }
+
+    public BigDecimal calculaTotalItens() {
         BigDecimal bdAux = new BigDecimal(0);
 
         for(ItemDividido item:lsItens) {
             bdAux = bdAux.add( item.calculaTotal() );
         }
 
-        for(Imposto imposto : lsImposto) {
-            bdAux = bdAux.add(imposto.calculaImposto(lsItens));
+        return bdAux;
+    }
+
+    public BigDecimal calculaTotalImpostos() {
+        BigDecimal bdAux = new BigDecimal(0);
+        BigDecimal bdTotalItens = calculaTotalItens();
+
+        for(IImposto imposto : lsImposto) {
+            bdAux = bdAux.add(imposto.calculaImposto(bdTotalItens));
         }
 
         return bdAux;
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // Limpa os dados dessa conta
+    public void limpaDados() {
+        for(int i = lsItens.size() - 1; i >= 0; i--) {
+            ItemDividido itDiv = lsItens.get(i);
+            itDiv.limparItem(); //Vai retirando todos os itens divididos das listas de ITEM e CONTA
+        }
+
+        lsItens.clear();
+        lsImposto.clear();
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -71,8 +107,37 @@ public class Conta {
         return lsItens;
     }
 
-    public List<Imposto> getLsImposto() {
+    public List<IImposto> getLsImposto() {
         return lsImposto;
     }
     ///////////////////////////////////////////////////////////////////////////////////////////////
+
+
+    @Override
+    public String toString() {
+        String out = "Conta [" + pagante.toString() + "] \r\n" +
+                "  - Itens Divididos\r\n";
+        for(ItemDividido item : lsItens){
+            out += "    -> " + item.toString();
+            out += "\r\n";
+        }
+
+        out += "  - IMPOSTOS\r\n";
+        BigDecimal bdTotalItens = calculaTotalItens();
+        for(IImposto imp : lsImposto) {
+            out += "    -> " + imp.toString() + " ['" + imp.calculaImposto(bdTotalItens) + "']";
+            out += "\r\n";
+        }
+
+        out += "## S U B   T O T A L -> " + String.format("%8s", UtilString.formataCasasDecimais(bdTotalItens) ) + "\r\n";
+        out += "## I M P O S T O     -> " + String.format("%8s", UtilString.formataCasasDecimais(calculaTotalImpostos()) ) + "\r\n";
+        out += "## T O T A L         -> " + String.format("%8s", UtilString.formataCasasDecimais(calculaTotal()) );
+
+        return out;
+    }
+
+    @Override
+    public int hashCode() {
+        return pagante.hashCode() + lsItens.hashCode() + lsImposto.hashCode();
+    }
 }

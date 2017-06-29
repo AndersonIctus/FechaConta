@@ -19,4 +19,15 @@ public class Pagante {
     public void setNome(String nome) {
         this.nome = nome;
     }
+
+    @Override
+    public String toString() {
+        return "Pagante('" + nome + "')";
+    }
+
+    @Override
+    public int hashCode() {
+        if(nome == null || nome.equals("")) return 1;
+        return nome.hashCode();
+    }
 }
